@@ -96,6 +96,7 @@ struct TypeInfo {
   uint8_t bits() const {
     return bits_;
   }
+  // TODO: why these special functions?
   bool is_float() const {
     return code_ == Float;
   }
@@ -286,6 +287,7 @@ struct Sema {
       case '-':
       case '*':
       case '/':
+      case '%':
       case TK_MIN:
       case TK_MAX: {
         auto nexp =
@@ -354,6 +356,7 @@ struct Sema {
       nonTemporaries.insert(p.ident().name());
       inputParameters.insert(p.ident().name());
     }
+    // why the use of term non-temporaries?
     for (auto r : func.returns()) {
       nonTemporaries.insert(r.ident().name());
     }

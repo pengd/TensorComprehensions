@@ -156,6 +156,8 @@ Expr translateExpr(
       return t(0) * t(1);
     case '/':
       return t(0) / t(1);
+    case '%':
+      return t(0) % t(1);
     case lang::TK_MIN:
       return min(t(0), t(1));
     case lang::TK_MAX:
@@ -956,6 +958,8 @@ translate(isl::ctx ctx, const lang::TreeRef& treeRef, bool throwWarnings) {
       lang::Def(lang::Sema().checkFunction(treeRef)), throwWarnings);
 }
 
+// NOTE: there is no guarantee here that the tc string has only one def. It could
+// have many defs. Only first def will be converted in that case. 
 HalideComponents
 translate(isl::ctx ctx, const std::string& tc, bool throwWarnings) {
   LOG_IF(INFO, tc::FLAGS_debug_halide) << tc;

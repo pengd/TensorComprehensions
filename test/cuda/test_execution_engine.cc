@@ -32,7 +32,7 @@
 
 struct ATenCompilationUnitTest : public ::testing::Test {
   static constexpr uint32_t N = 8, C = 16, O = 6, H = 24, W = 27;
-  static constexpr uint32_t KH = 3, KW = 3, SH = 1, SW = 1;
+  static constexpr uint32_t KC = 3, KH = 3, KW = 3, SH = 1, SW = 1;
   void Check(
       const std::string& tc,
       const std::string& name,
@@ -233,6 +233,24 @@ def convolution(float(N,C,H,W) I, float(O,C,KH,KW) W1, float(O) B)
   at::Tensor expected = at::conv2d(I, W1, B);
   at::Tensor diff = outputs[1].sub(expected);
   checkRtol(diff, inputs, C * KW * KH, 5e-7);
+}
+
+TEST_F(ATenCompilationUnitTest, LocalSparseConvolution) {
+  at::Tensor I = at::CUDA(at::kFloat).rand({N, C, H, W});
+  at::Tensor W1 = at::CUDA(at::kFloat).rand({O, KC, KH, KW});
+  std::vector<at::Tensor> inputs = {I, W1};
+  std::vector<at::Tensor> outputs;
+
+  Check(
+      R"(
+def local_sparse_convolution(float(N, C, H, W) I, float(O, KC, KH, KW) W1) -> (O) {
+    O(n, o, h, w) +=! I(n, (c + kc) % c, h + kh, w + kw) * W1(o, kc, kh, kw) where c in 0:C
+}
+    )",
+      "local_sparse_convolution",
+      tc::CudaMappingOptions::makeConvolutionCudaMappingOptions(),
+      inputs,
+      outputs);
 }
 
 TEST_F(ATenCompilationUnitTest, Convolution2dStrided) {
